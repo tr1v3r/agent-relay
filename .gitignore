@@ -1,5 +1,5 @@
 __pycache__/
 *.py[cod]
 *.tmp
-.agent-handoff/
+.agents/handoff/
 agent-relay-workspace/

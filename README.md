@@ -42,31 +42,32 @@ python scripts/handoff.py create \
   --decision "Reused the existing domain model" \
   --verification "go test ./service/example/...: passed" \
   --next-action "Create the PR and complete integration testing" \
-  --output HANDOFF.json
+  --output .agents/handoff/HANDOFF.json
 ```
 
 Validate and compare the recorded Git state with a local worktree:
 
 ```bash
-python scripts/handoff.py validate HANDOFF.json \
+python scripts/handoff.py validate .agents/handoff/HANDOFF.json \
   --check-git /path/to/worktree
 ```
 
 Render a human-readable copy:
 
 ```bash
-python scripts/handoff.py render HANDOFF.json --output HANDOFF.md
+python scripts/handoff.py render .agents/handoff/HANDOFF.json \
+  --output .agents/handoff/HANDOFF.md
 ```
 
 Acknowledge successful ingestion:
 
 ```bash
-python scripts/handoff.py ack HANDOFF.json \
+python scripts/handoff.py ack .agents/handoff/HANDOFF.json \
   --receiver-agent work-manager \
   --disposition ingested \
   --verified \
   --record records/projects/example-project.md \
-  --output ACK.json
+  --output .agents/handoff/ACK.json
 ```
 
 ## Installation
