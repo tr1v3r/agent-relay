@@ -83,3 +83,7 @@ Agent Relay is intentionally not a workflow engine or a live shared-memory syste
 - the receiver verifies material claims and records durable information;
 - retries preserve the same `handoff_id`;
 - the receiver acknowledges `accepted`, `ingested`, `needs_changes`, or `rejected`.
+
+## License
+
+[MIT](LICENSE) © 2026 tr1v3r
