@@ -1,5 +1,7 @@
 # Agent Relay
 
+[![CI](https://github.com/tr1v3r/agent-relay/actions/workflows/ci.yml/badge.svg)](https://github.com/tr1v3r/agent-relay/actions/workflows/ci.yml)
+
 An Agent Skill that turns a git branch's changes into a five-section,
 human-readable Markdown report. The report is shown in the conversation and
 saved to `.agents/handoff/<branch>-vs-<base>.md` in the summarized project,
