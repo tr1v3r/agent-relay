@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate skill structure
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check required files
+        run: |
+          for f in SKILL.md README.md ARCHITECTURE.md LICENSE; do
+            [ -f "$f" ] || { echo "::error::$f missing"; exit 1; }
+          done
+
+      - name: Check SKILL.md frontmatter
+        run: |
+          head -1 SKILL.md | grep -q '^---' || { echo "::error::SKILL.md must start with YAML frontmatter"; exit 1; }
+          awk '/^---$/{n++; next} n==1{print}' SKILL.md > /tmp/fm.yml
+          grep -q '^name:' /tmp/fm.yml || { echo "::error::frontmatter missing name"; exit 1; }
+          grep -q '^description:' /tmp/fm.yml || { echo "::error::frontmatter missing description"; exit 1; }
+          echo "SKILL.md frontmatter OK"
