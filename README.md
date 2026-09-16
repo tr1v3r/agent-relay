@@ -1,5 +1,7 @@
 # Agent Relay
 
+[![CI](https://github.com/tr1v3r/agent-relay/actions/workflows/ci.yml/badge.svg)](https://github.com/tr1v3r/agent-relay/actions/workflows/ci.yml)
+
 An Agent Skill that turns a Git branch, ref range, or working tree into a
 concise, evidence-backed Markdown report. It is designed for someone who wants
 to understand what changed without reading the full diff.
