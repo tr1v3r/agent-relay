@@ -1,0 +1,81 @@
+{
+  "skill_name": "agent-relay",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "总结当前 feature/payment-retry 分支相对 origin/main 的修改。这个分支有多次提交，既改了服务入口，也新增了重试包和测试；只需要高层摘要，不做 code review。",
+      "expected_output": "基于明确的 origin/main...feature/payment-retry 范围输出五部分摘要，记录 ref SHA 和 merge-base，读取实际 diff 后归纳主流程与模块，并按真实提交历史分阶段。",
+      "files": [],
+      "expectations": [
+        "使用用户明确指定的 origin/main 作为 baseline",
+        "比较范围包含 base、target 和 merge-base 的 commit 标识",
+        "提交数、文件数和增删行数均来自一致的 Git 范围",
+        "核心业务流程由实际实现和测试支持，而不只复述 commit 标题",
+        "输出不包含缺陷分析、改进建议或审批判断",
+        "未在用户没有要求保存时写入 .agents/handoff"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "看看这个分支相对仓库默认分支改了什么。它只有一个修复提交，主要删除了一条过时的 fallback。",
+      "expected_output": "从 origin/HEAD 解析默认基线，为单提交删除型修复使用核心变更链路和主要变更模块，只生成一个开发阶段，不虚构新增模块或业务流程。",
+      "files": [],
+      "expectations": [
+        "优先从 origin/HEAD 解析默认基线",
+        "使用核心变更链路和主要变更模块等中性标题",
+        "开发演进只有一个证据充分的阶段",
+        "删除行和删除文件被正确计入规模",
+        "没有虚构新增能力或额外开发阶段"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "总结我现在还没提交的 WIP，仓库里同时有 staged、unstaged 和两个 untracked 文件。保存一份给后续 agent 接手。",
+      "expected_output": "以当前 branch 和 HEAD 标识工作区范围，分别统计 staged、unstaged、untracked；不把未跟踪文件混入 Git 行数；返回报告并安全写入 .agents/handoff/<target>-working-tree.md。",
+      "files": [],
+      "expectations": [
+        "分别标注 staged、unstaged 和 untracked 范围",
+        "报告 0 个 commit，不声称 WIP 已被提交",
+        "未跟踪文件默认不计入 git diff 的增删行总数",
+        "同一路径同时有 staged 和 unstaged 修改时，整体文件数按路径并集计算",
+        "因用户明确要求保存而写入 working-tree 命名的 handoff 文件",
+        "写入前检查 .agents/handoff 是否被忽略"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "summarize the release branch diff against main; most of the changed lines are protobuf output and a lockfile, with two binary fixtures and one renamed package",
+      "expected_output": "Produce an English report with exact rename-aware path and text-line counts, exclude binary files from line totals, identify generated/bulk artifacts as dominant, and avoid overstating handwritten implementation size.",
+      "files": [],
+      "expectations": [
+        "The report is written in English",
+        "Rename detection counts the renamed package as one changed path",
+        "Binary paths are counted but excluded from text line totals",
+        "Generated protobuf and lockfile changes are called out as dominating scale",
+        "The report records immutable comparison commit identifiers"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "总结一下当前分支相对 origin/main 的改动；两个 ref 现在指向同一个 commit。",
+      "expected_output": "明确报告没有差异和零规模，不制造变更流程、模块或开发阶段。",
+      "files": [],
+      "expectations": [
+        "报告 0 个 commit、0 个文件和 +0/-0 行",
+        "明确 target 与 baseline 没有差异",
+        "没有虚构模块、流程或开发阶段"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "总结一下这个仓库目前提供了哪些产品能力，并告诉我接下来最值得做什么。",
+      "expected_output": "This is a repository/product overview with recommendations rather than a Git branch or diff summary, so agent-relay should not trigger.",
+      "files": [],
+      "expectations": [
+        "不套用 branch-vs-base 五段式报告",
+        "不因出现‘总结’和‘仓库’就自动创建 .agents/handoff 文件",
+        "可以正常提供产品能力概览与建议"
+      ]
+    }
+  ]
+}
