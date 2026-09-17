@@ -2,32 +2,60 @@
 
 [![CI](https://github.com/tr1v3r/agent-relay/actions/workflows/ci.yml/badge.svg)](https://github.com/tr1v3r/agent-relay/actions/workflows/ci.yml)
 
-An Agent Skill that turns a git branch's changes into a five-section,
-human-readable Markdown report. The report is shown in the conversation and
-saved to `.agents/handoff/<branch>-vs-<base>.md` in the summarized project,
-so other agents can find it.
+An Agent Skill that turns a Git branch, ref range, or working tree into a
+concise, evidence-backed Markdown report. It is designed for someone who wants
+to understand what changed without reading the full diff.
 
 ## Report shape
 
-一句话 → 规模 → 核心业务流程 → 主要新增模块（表格）→ 开发演进
+The report keeps five recognizable information blocks:
 
-例如：
+> **一句话** → **比较范围与规模** → **核心流程/变更链路** →
+> **主要变更模块** → **开发演进**
 
-> **一句话**：为离职流程新建了一个"离职报告智能体"——在员工离职人群聊中接入 AI Agent，自动生成风险研判报告。
->
-> **规模**：96 个 commit，97 个文件，+41k/-9.4k 行（其中 kitex_gen 生成代码占大头）。
+Headings adapt to the change. A feature can use “核心业务流程” and “主要新增模块”;
+a bug fix, refactor, deletion, configuration update, or documentation change uses
+the more neutral “核心变更链路” and “主要变更模块.”
 
 ## How it works
 
-The skill instructs an agent to collect facts with git (`log`, `diff --stat`,
-merge-base against `master`/`main`), then render the five-section template
-under writing constraints that keep the report factual and aggregate-based.
-No scripts, no protocol — instructions only.
+The skill instructs an agent to:
+
+1. resolve the user-specified baseline or the repository's actual default branch;
+2. resolve and consistently use immutable base, target, and merge-base commit
+   identities;
+3. collect commit, file, rename, binary, and line statistics from one consistent
+   Git range;
+4. inspect the patch and representative implementation, tests, and documentation;
+5. separate committed changes from staged, unstaged, and untracked work without
+   double-counting paths shared by multiple worktree states;
+6. produce a factual five-part summary without review findings or invented phases.
+
+No scripts or runtime protocol are required. Git is the only dependency.
+
+## Persistence
+
+The complete report is always returned in the conversation. When the user asks
+to save, archive, hand off, or relay it, the report is also written to:
+
+```text
+.agents/handoff/<target>-vs-<base>.md
+```
+
+The repository should ignore `.agents/handoff/` so generated reports are not
+committed accidentally. A write failure does not prevent the conversational
+summary.
+
+## Evaluation coverage
+
+The bundled eval set covers multi-module feature branches, one-commit bug fixes,
+dirty worktrees, generated-code-heavy changes, empty comparisons, and near-miss
+requests that should not trigger this skill.
 
 ## Installation
 
 Copy or link this repository into the skill directory of any Agent
-Skills-compatible runtime. Requires git.
+Skills-compatible runtime.
 
 ## License
 
