@@ -21,7 +21,21 @@ frontmatter 中，避免“总结一下仓库”之类的近似请求误触发 b
 - staged、unstaged、untracked 并存的 working tree；
 - 用户明确要求时，已提交分支变化与本地 WIP 的组合摘要。
 
-目标 ref 优先使用用户指定值，否则使用 `HEAD`。基线按以下顺序解析：
+先选模式，再解析 ref：
+
+| 模式 | 树比较 | 历史 |
+| --- | --- | --- |
+| `branch-introduced` | 唯一 merge-base → target | `base..target` 右侧独有提交 |
+| `endpoint-snapshot`（含显式 `A..B` diff） | A → B | 可选 `A..B` 辅助历史，不代表完整树差异的来源 |
+| 显式 `A...B` diff | 唯一 merge-base(A,B) → B | 右侧历史 `A..B`；归入 `branch-introduced` |
+| `single-commit` | 唯一 parent → C；root 用 empty tree；merge 先问 parent | 只有 C，1 commit |
+| `working-tree` | HEAD → index、index → worktree；另算 HEAD → worktree 净值 | 0 commit，untracked 单列 |
+
+`git log A...B` 是两侧提交的对称差，与三点 diff 不同。用户若要这个提交集合，需用
+`--left-right` 标明两侧，不能冒充 target 开发时间线。范围意图含糊时先问，不擅改点号。
+
+目标 ref 优先使用用户指定值，否则使用 `HEAD`。仅需要发现基线的分支摘要按以下顺序解析，
+显式端点和单 commit 不走默认分支回退：
 
 1. 用户明确指定的 baseline；
 2. `origin/HEAD` 指向的仓库默认分支；
@@ -33,14 +47,21 @@ frontmatter 中，避免“总结一下仓库”之类的近似请求误触发 b
 
 ### Git 事实层
 
-分支比较使用同一组 base/target SHA 收集四类事实：
+按模式固定 left/right 树端点，文件数、行数、模块统计和 patch 共用这对端点；历史另行标注：
 
 | 事实 | 命令 | 用途 |
 | --- | --- | --- |
-| commit 数 | `git rev-list --count <base>..<target>` | 规模 |
-| 时间线 | `git log --reverse ... <base>..<target>` | 开发演进 |
-| 路径状态 | `git diff --name-status --find-renames <base>...<target>` | 新增、修改、删除、重命名 |
-| 行数 | `git diff --numstat --find-renames <base>...<target>` | 精确的文本增删量和二进制识别 |
+| 分支右侧 commit 数 | `git rev-list --count <base>..<target>` | 历史规模，不是树差异数量 |
+| 分支时间线 | `git log --reverse ... <base>..<target>` | 开发演进 |
+| 路径状态 | `git diff --name-status -z --find-renames <left> <right>` | 新增、修改、删除、重命名 |
+| 行数 | `git diff --numstat -z --find-renames <left> <right>` | 精确的文本增删量和二进制识别 |
+
+`git merge-base --all` 只有一个结果时才用于分支归因；零个结果不暗转 snapshot，多个结果
+不任取一个，应说明边界并请用户选择端点。浅历史或缺失对象不能证明真实无祖先。
+单提交用 `git rev-list --parents -n 1` 查 parent，root 的 empty-tree ID 用仓库自身对象
+格式动态生成，不硬编码 SHA-1；merge 不使用可能省略变化的默认 combined diff。
+端点比较的右侧独有提交只能称辅助历史，baseline 侧变化也可能影响树差异。
+空 diff 和空历史分别判断，例如 revert 可使净变化为零而历史非空。
 
 数字只是索引，不足以证明行为。Skill 还要求阅读实际 patch，以及有代表性的实现、测试和
 文档。commit subject 只负责解释时间线，不能单独作为“功能已实现”的证据。
@@ -54,11 +75,18 @@ frontmatter 中，避免“总结一下仓库”之类的近似请求误触发 b
 
 - `git diff`：unstaged；
 - `git diff --cached`：staged；
-- `git ls-files --others --exclude-standard`：untracked。
+- `git ls-files -z --others --exclude-standard`：untracked。
 
-三类状态分别报告。untracked 默认不进入 Git 行数总计；同一路径可能同时有 staged 和
-unstaged hunks，因此整体文件数取路径并集，不能把三个分类计数直接相加。working tree
-摘要明确写 `0 个 commit`，避免把 WIP 伪装成已提交交付。
+三类状态分别报告。冻结当前 checkout 的 HEAD，以 `git diff <head>` 独立计算 tracked
+净文件数和净行数，不把 staged/unstaged 行数相加：两层可以互相抵消为零净变化。
+触及路径数取三个层的字面路径并集（rename 的两端均进入集合），与净 diff 经 rename
+检测后的 changed-file 数分开命名。解析特殊文件名时使用 `-z`，不按行或空白拆路径。
+untracked 行数即使另行检查统计，也不进入 tracked 净值。
+
+working tree 摘要明确写 `0 个 commit`；与分支组合时两种规模分开，不同 target 和本地
+checkout 也不冒称同一上下文。unborn HEAD 只报 staged/unstaged/untracked 层，没有
+HEAD-relative 净总计；冲突状态说明限制，不把不完整数字当作普通快照。取证后复查状态，
+发现 index/worktree 变动则重新收集或披露，避免把可变状态伪装成不可变 SHA 快照。
 
 ### 五部分输出
 
