@@ -24,11 +24,19 @@ Choose the comparison mode before interpreting changes. A tree delta and a
 commit set answer different questions; name both rather than calling them one
 range. Preserve explicit notation; ask when the requested meaning is ambiguous.
 
+If clarification is required (invalid ref, ambiguous mode, missing merge parent,
+or multiple merge bases), ask when interaction is available. In headless runs,
+without an interaction tool, or when no answer is available, return the missing
+decision and verified facts, then stop the blocked comparison. Do not guess,
+invent scale, or wait/retry indefinitely. For combined requests, label the blocked
+scope and report only independently resolved scopes; a blocker notice need not
+fill the five-part report with placeholders.
+
 | Request / mode | Tree delta (left → right) | History for count and phases |
 | --- | --- | --- |
 | What a branch introduced (default branch summary) | unique merge-base(base, target) → target | `base..target`, target-only reachable commits |
 | Endpoint snapshot / explicit `A..B` diff | A → B | `A..B` only as labelled right-only supporting history, not the full explanation of the tree delta |
-| Explicit `A...B` diff | unique merge-base(A, B) → B | `A..B`, labelled right-only history |
+| Explicit `A...B` diff (`branch-introduced`) | unique merge-base(A, B) → B | `A..B`, labelled right-only history |
 | Single commit C | sole parent → C; root uses empty tree | C only, exactly 1 commit |
 | Merge commit C | selected parent → C | C only, exactly 1 commit; ask which parent if unspecified |
 | Working tree / WIP | HEAD → index; index → worktree; tracked net HEAD → worktree | no commits; untracked files separate |
@@ -54,7 +62,8 @@ For branch summaries that need baseline discovery, use the first valid choice
 in this order. Explicit endpoints and single-commit requests bypass discovery:
 
 1. the baseline explicitly named by the user;
-2. the remote default branch from `refs/remotes/origin/HEAD`;
+2. the remote default branch from `refs/remotes/origin/HEAD` (resolve with
+   `git symbolic-ref --short refs/remotes/origin/HEAD`);
 3. `origin/main`, `origin/master`, `main`, then `master`.
 
 Do not silently replace an invalid user-supplied ref. Report it and ask for a
@@ -149,6 +158,10 @@ proof of implementation.
 Call out generated or bulk artifacts when they dominate the totals. Check
 repository conventions and `.gitattributes` in addition to recognizable paths
 such as generated clients, protobuf output, vendored code, and lock files.
+When relevant generation inputs or configuration exist (for example schemas,
+`buf.yaml`, or a Makefile), inspect them read-only in the selected version to
+trace the output's origin. Do not run generators for a summary. If that origin
+cannot be established, disclose the gap rather than infer it from filenames.
 
 ### Working-tree changes
 

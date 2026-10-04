@@ -56,7 +56,11 @@ when their histories diverge. `A...B` diffs use the merge base, whereas `git log
 A...B` selects both sides' unique commits. Single root commits compare against
 an empty tree; single merge commits require an explicitly selected parent.
 Missing or multiple merge bases are disclosed, never silently replaced with a
-snapshot or an arbitrary ancestor.
+snapshot or an arbitrary ancestor. If a required clarification cannot be answered
+in a headless/non-interactive run, the agent returns the missing decision and
+verified facts, then stops that comparison without guessing numbers or waiting
+indefinitely. Independently resolved scopes of a combined request can still be
+reported.
 
 No scripts or runtime protocol are required. Git is the only dependency.
 
@@ -88,6 +92,13 @@ dirty worktrees, generated-code-heavy changes, empty comparisons, and near-miss
 requests that should not trigger this skill. The separate [handoff scenarios](evals/handoff.json)
 cover metadata, repeated saves, collisions, symlinks, and persistence failures;
 these are behavioral prompts, not proof of a host's filesystem safety.
+
+The [eight evidence cases](evals/evidence.json) additionally specify M/E mapping,
+committed deletion, WIP layers, generated-output provenance and rename coverage,
+scope-preserving follow-up, empty comparisons, zero-net-change history, and a
+staged rename followed by an unstaged deletion. Fixture associations make the
+Git inputs reproducible; dataset validation and Git-fact tests do not establish
+that a model has passed these behavioral expectations.
 
 ## Installation
 
