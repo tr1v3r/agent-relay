@@ -56,7 +56,11 @@ when their histories diverge. `A...B` diffs use the merge base, whereas `git log
 A...B` selects both sides' unique commits. Single root commits compare against
 an empty tree; single merge commits require an explicitly selected parent.
 Missing or multiple merge bases are disclosed, never silently replaced with a
-snapshot or an arbitrary ancestor.
+snapshot or an arbitrary ancestor. If a required clarification cannot be answered
+in a headless/non-interactive run, the agent returns the missing decision and
+verified facts, then stops that comparison without guessing numbers or waiting
+indefinitely. Independently resolved scopes of a combined request can still be
+reported.
 
 No scripts or runtime protocol are required. Git is the only dependency.
 
