@@ -9,6 +9,7 @@ import subprocess
 FIXTURE_IDS = (
     "divergent", "deletion", "wip", "artifacts", "empty", "commits",
     "special-paths", "unrelated", "unborn", "criss-cross", "net-zero-history",
+    "wip-rename-delete",
 )
 SPECIAL_PATHS = ("space name.txt", "tab\tname.txt", "line\nname.txt", "中文.txt",
                  "-leading.txt", ":(glob)*.txt")
@@ -16,8 +17,16 @@ SPECIAL_PATHS = ("space name.txt", "tab\tname.txt", "line\nname.txt", "中文.tx
 
 class Repository:
     def __init__(self, path):
-        self.path = Path(path).resolve()
-        # Refuse existing destinations; never overwrite a user's checkout.
+        destination = Path(path)
+        # Inspect the final input component before resolve follows a dangling link.
+        # Parent aliases (e.g. macOS /tmp) are allowed. This is not race protection.
+        try:
+            destination.lstat()
+        except FileNotFoundError:
+            pass
+        else:
+            raise FileExistsError(f"fixture destination already exists: {destination}")
+        self.path = destination.resolve()
         self.path.mkdir(parents=True, exist_ok=False)
         self.env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
         self.env.update({
@@ -104,6 +113,12 @@ def build_fixture(name, path):
         repo.write("untracked-one.txt", "not in totals\n")
         repo.write("untracked-two.txt", "not in totals either\n")
         repo.write("ignored.txt", "ignored\n")
+    elif name == "wip-rename-delete":
+        repo.git("mv", "--", "common.txt", "moved.txt")
+        moved = repo.path / "moved.txt"
+        if moved.resolve() != repo.path / "moved.txt":
+            raise ValueError("unexpected fixture deletion path")
+        moved.unlink()
     elif name == "artifacts":
         repo.write("old.txt", "rename me\n")
         repo.write("one.bin", b"\0old")

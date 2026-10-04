@@ -12,6 +12,7 @@ jobs:
   validate:
     name: Validate skill structure
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -32,6 +33,7 @@ jobs:
   git-regression:
     name: Git contracts (Python ${{ matrix.python }})
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:

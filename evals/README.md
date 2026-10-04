@@ -26,8 +26,8 @@ PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -v
 ```
 
 CI runs this command on Ubuntu with Python 3.11 and 3.13, alongside the existing
-skill-structure checks. Fixture repositories are created under Python temporary
-directories and automatically cleaned up. Fixed identities/dates and isolated Git
+skill-structure checks. Both jobs have a ten-minute timeout. Fixture repositories
+are created under Python temporary directories and automatically cleaned up. Fixed identities/dates and isolated Git
 configuration prevent user signing, hooks, global ignores, attributes, and inherited
 `GIT_*` environment variables from changing the cases. Tests compare dynamically
 resolved object IDs rather than assuming a particular hash algorithm or Git version.
@@ -41,11 +41,17 @@ Run from the skill checkout and choose a **nonexistent** destination:
 ```sh
 python3 scripts/git_fixtures.py divergent /tmp/agent-relay-divergent
 python3 scripts/git_fixtures.py wip /tmp/agent-relay-wip
+python3 scripts/git_fixtures.py wip-rename-delete /tmp/agent-relay-wip-rename-delete
 ```
 
-The CLI prints its absolute path and named commit IDs as JSON, and refuses to
-reuse an existing destination. It does not modify the skill checkout or configure
-an actual remote. `origin/main` and `origin/HEAD` are local fixture refs.
+The CLI prints its absolute path and named commit IDs as JSON, and rejects an
+already-existing final destination before resolving it: directories, files, live
+symlinks and dangling symlinks are all refused. Normal parent-directory aliases
+(such as macOS `/tmp`) are allowed. This check prevents accidental reuse of an
+existing target; it is **not** protection against concurrent path replacement or
+hostile filesystem races. Use a trusted parent directory. It does not modify the
+skill checkout or configure an actual remote. `origin/main` and `origin/HEAD` are
+local fixture refs.
 Use the matching case's `prompt` in that repository, with the intended skill version
 available, and record the skill revision, model, prompt, transcript, final report,
 and any output files. Materialize a fresh repository for each run/configuration
@@ -64,6 +70,7 @@ for model variability. That experiment is **not** part of this deterministic CI.
 | `divergent` | Main has a unique file; feature has two commits adding two lines. Branch-introduced diff: 1 file, +2/-0. Endpoint diff: 2 files, +2/-1. Right-only history: 2; symmetric history: 3. |
 | `deletion` | Remote default points to baseline; one commit deletes a one-line fallback file. |
 | `wip` | Staged 2, unstaged 2, untracked 2; union 5 literal paths. `common.txt` cancels between layers. Tracked net: 2 files, +2/-0. Ignored file excluded. |
+| `wip-rename-delete` | Staged common.txt→moved.txt rename, then unstaged deletion of moved.txt. Touched union has both names; tracked net is one deleted file, +0/-1. Deletion evidence is in the index at moved.txt, not HEAD:moved.txt. |
 | `artifacts` | One pure rename, two binary files, generated file (+100) and lockfile (+50): 5 records, +150/-0 text lines. Generated attribute is explicit. |
 | `empty` | HEAD and origin/main are identical; also provides an existing fallback ref when testing invalid explicit input. |
 | `commits` | Root, ordinary commit and two-parent merge; parent 1 diff is side.txt, parent 2 diff is one.txt. A merge's single-commit history is one commit even when parent1..merge contains two. Parent choice requires user input. |

@@ -101,11 +101,7 @@ class GitContracts(unittest.TestCase):
         self.assertEqual(r.run("check-ignore", ".agents/handoff/report.md").returncode, 0)
 
     def test_wip_staged_rename_then_unstaged_deletion(self):
-        r = self.fixture("empty")
-        r.git("mv", "--", "common.txt", "moved.txt")
-        path = r.path / "moved.txt"
-        self.assertEqual(path.resolve(), r.path / "moved.txt")
-        path.unlink()
+        r = self.fixture("wip-rename-delete")
         staged = numstat(r.git("diff", "--cached", "--numstat", "-z", "--find-renames", "HEAD", "--"))
         unstaged = stats(r)
         self.assertEqual(staged, [(b"0", b"0", b"common.txt", b"moved.txt")])
@@ -197,6 +193,49 @@ class GitContracts(unittest.TestCase):
         with self.assertRaises(FileExistsError):
             build_fixture("empty", path)
         self.assertEqual(marker.read_text(), "preserved")
+        self.assertEqual(set(path.iterdir()), {marker})
+
+    def test_fixture_refuses_existing_file(self):
+        path = Path(self.tmp.name) / "existing-file"
+        path.write_bytes(b"preserved\0content")
+        with self.assertRaises(FileExistsError):
+            build_fixture("empty", path)
+        self.assertEqual(path.read_bytes(), b"preserved\0content")
+
+    def test_fixture_refuses_live_and_dangling_symlinks(self):
+        root = Path(self.tmp.name)
+        live_dir = root / "live-directory"
+        live_dir.mkdir()
+        marker = live_dir / "keep.txt"
+        marker.write_text("preserved")
+        live_file = root / "live-file"
+        live_file.write_text("unchanged")
+        missing = root / "missing-target"
+        for name, target in (("directory-link", live_dir), ("file-link", live_file),
+                             ("dangling-link", missing)):
+            with self.subTest(kind=name):
+                link = root / name
+                link.symlink_to(target)
+                with self.assertRaises(FileExistsError):
+                    build_fixture("empty", link)
+                self.assertTrue(link.is_symlink())
+                self.assertEqual(link.readlink(), target)
+        self.assertEqual(marker.read_text(), "preserved")
+        self.assertEqual(set(live_dir.iterdir()), {marker})
+        self.assertEqual(live_file.read_text(), "unchanged")
+        self.assertFalse(missing.exists())
+        self.assertFalse(missing.is_symlink())
+
+    def test_fixture_allows_parent_directory_alias(self):
+        root = Path(self.tmp.name)
+        physical = root / "physical"
+        physical.mkdir()
+        alias = root / "alias"
+        alias.symlink_to(physical, target_is_directory=True)
+        repo = build_fixture("empty", alias / "new-fixture")
+        self.assertEqual(repo.path, (physical / "new-fixture").resolve())
+        self.assertTrue(alias.is_symlink())
+        self.assertEqual(repo.text("rev-parse", "HEAD"), repo.refs["root"])
 
 
 if __name__ == "__main__":

@@ -145,6 +145,22 @@
       "expected_output": "两次提交互相抵消：净 diff 空，但真实历史仍有2个提交。",
       "files": [],
       "expectations": ["2 个 commit、0 个文件、+0/-0", "不把净零改动写成零提交", "不虚构最终交付能力"]
+    },
+    {
+      "id": 20,
+      "fixture": "commits",
+      "prompt": "这是无法交互的 headless 批处理，请只总结 HEAD 这个 merge commit；我没有指定比较哪个 parent。",
+      "expected_output": "返回缺少 parent 选择的说明与已核实的提交及父身份，停止受阻比较，不等待交互或擅自选择。",
+      "files": [],
+      "expectations": ["明确缺少 parent 选择，HEAD 有两个 parent", "只报告已核实身份等事实，不暗设 first-parent", "无法交互时结束受阻 scope，不等待用户回复", "不生成尚未确定 parent 的 diff 文件数或行数"]
+    },
+    {
+      "id": 21,
+      "fixture": "empty",
+      "prompt": "在无法询问用户的 headless 任务里，总结 HEAD 相对 does-not-exist 的改动。",
+      "expected_output": "返回显式基线无效、需提供有效 ref 及已核实的 HEAD 身份，然后停止受阻比较。",
+      "files": [],
+      "expectations": ["指出 does-not-exist 无效，缺少有效 baseline", "不回退 origin/main、不猜 ref、不等待交互", "只报告已核实事实，不把受阻比较伪装成零规模成功"]
     }
   ]
 }
