@@ -20,7 +20,32 @@ commit history shows how the work evolved.
 
 ## 1. Resolve the comparison
 
-Identify the target and baseline before interpreting any changes.
+Choose the comparison mode before interpreting changes. A tree delta and a
+commit set answer different questions; name both rather than calling them one
+range. Preserve explicit notation; ask when the requested meaning is ambiguous.
+
+If clarification is required (invalid ref, ambiguous mode, missing merge parent,
+or multiple merge bases), ask when interaction is available. In headless runs,
+without an interaction tool, or when no answer is available, return the missing
+decision and verified facts, then stop the blocked comparison. Do not guess,
+invent scale, or wait/retry indefinitely. For combined requests, label the blocked
+scope and report only independently resolved scopes; a blocker notice need not
+fill the five-part report with placeholders.
+
+| Request / mode | Tree delta (left → right) | History for count and phases |
+| --- | --- | --- |
+| What a branch introduced (default branch summary) | unique merge-base(base, target) → target | `base..target`, target-only reachable commits |
+| Endpoint snapshot / explicit `A..B` diff | A → B | `A..B` only as labelled right-only supporting history, not the full explanation of the tree delta |
+| Explicit `A...B` diff (`branch-introduced`) | unique merge-base(A, B) → B | `A..B`, labelled right-only history |
+| Single commit C | sole parent → C; root uses empty tree | C only, exactly 1 commit |
+| Merge commit C | selected parent → C | C only, exactly 1 commit; ask which parent if unspecified |
+| Working tree / WIP | HEAD → index; index → worktree; tracked net HEAD → worktree | no commits; untracked files separate |
+
+For `git diff`, `A..B` means the same endpoint comparison as `A B`, not a
+merge-base comparison. For `git log`, `A...B` means the symmetric difference of
+two histories, not the three-dot diff's target-only history. If the user asks for
+that commit set, use `--left-right` and label both sides; do not turn it into a
+single target-development timeline. Do not silently rewrite `..` to `...`.
 
 ### Target
 
@@ -33,57 +58,83 @@ git rev-parse --verify '<ref>^{commit}'
 
 ### Baseline
 
-Use the first valid choice in this order:
+For branch summaries that need baseline discovery, use the first valid choice
+in this order. Explicit endpoints and single-commit requests bypass discovery:
 
 1. the baseline explicitly named by the user;
-2. the remote default branch from `refs/remotes/origin/HEAD`;
+2. the remote default branch from `refs/remotes/origin/HEAD` (resolve with
+   `git symbolic-ref --short refs/remotes/origin/HEAD`);
 3. `origin/main`, `origin/master`, `main`, then `master`.
 
 Do not silently replace an invalid user-supplied ref. Report it and ask for a
 valid ref. Do not fetch unless the user requests fresh remote state; local
 remote-tracking refs may be stale, so describe them as local Git state.
 
-Resolve the merge base and record immutable identities:
+Resolve refs to full commit IDs with `git rev-parse --verify '<ref>^{commit}'`
+and use those immutable IDs in subsequent `merge-base`, `rev-list`, `log`, and
+`diff` commands. Short IDs are display labels only. This keeps the report
+consistent even if a branch moves while facts are being collected.
+
+For branch-introduced or three-dot comparisons, enumerate all merge bases:
 
 ```bash
-git symbolic-ref --short refs/remotes/origin/HEAD
-git merge-base <base> <target>
-git rev-parse --short=12 <base>
-git rev-parse --short=12 <target>
+git merge-base --all <base> <target>
 ```
 
-After validation, resolve both refs to full commit IDs and use those immutable
-IDs for every subsequent `merge-base`, `rev-list`, `log`, and `diff` command.
-This keeps one report internally consistent even if a branch moves while facts
-are being collected.
+Use the result only when exactly one merge base exists. With no common ancestor,
+do not call a direct tree comparison work introduced by the target; offer an
+explicitly requested snapshot instead. With multiple merge bases, do not pick
+one arbitrarily: explain the ambiguity and ask for explicit comparison endpoints
+or a snapshot. Shallow history or missing objects may prevent finding ancestry;
+report that limitation rather than asserting the histories are unrelated.
 
-If no common ancestor exists, do not present a direct tree comparison as work
-introduced by the target. Explain that lineage cannot be inferred; only produce
-a clearly labelled snapshot comparison when the user requests one.
+For single commits, inspect parents with `git rev-list --parents -n 1 <commit>`.
+Use the sole parent, or ask the user to select a merge parent. For a genuine root,
+obtain the repository-format empty-tree ID with `git hash-object -t tree --stdin`
+(empty input); use it as the left tree, not a commit/history baseline. A shallow
+boundary is not proof of a root. Do not use a merge's default combined diff as a
+substitute for a selected-parent comparison.
 
 ## 2. Collect facts
 
-For a branch or ref comparison, gather machine-readable facts from the exact
-same range:
+Record the mode (`branch-introduced`, `endpoint-snapshot`, `single-commit`, or
+`working-tree`), resolved tree endpoints, and history selection. Use the chosen
+`<left>` and `<right>` trees consistently for every file, line, module, and patch
+query; do not mix endpoint and merge-base statistics.
+
+```bash
+git diff --name-status -z --find-renames <left> <right>
+git diff --numstat -z --find-renames <left> <right>
+```
+
+For branch-introduced comparisons, collect the right-only history separately:
 
 ```bash
 git rev-list --count <base>..<target>
 git log --reverse --date=short --format='%ad%x09%h%x09%s' <base>..<target>
-git diff --name-status --find-renames <base>...<target>
-git diff --numstat --find-renames <base>...<target>
 ```
+
+For endpoint snapshots, these history commands are optional supporting evidence;
+label any count as right-only commits, not commits that uniquely produced the
+snapshot delta. Baseline-side changes can contribute to that delta too. For a
+single commit, count 1 and use `git log -1` on that commit, not an ancestor range.
 
 Use `--name-status` for added, modified, deleted, and renamed files. Use
 `--numstat` for additions and deletions; its `-` values identify binary files,
 which do not contribute to line totals. Count files after rename detection, so a
-rename is one changed path rather than an addition plus deletion.
+rename is one changed path rather than an addition plus deletion. Parse `-z`
+records (including rename source/destination fields), not whitespace or lines:
+branch diffs can contain spaces, tabs, and newlines in filenames too.
 
 Inspect the actual patch and representative implementation, tests, and docs:
 
 ```bash
-git diff --find-renames <base>...<target>
-git diff --numstat --find-renames <base>...<target> -- <path>
+git diff --find-renames <left> <right>
+git --literal-pathspecs diff --numstat -z --find-renames <left> <right> -- '<path>'
 ```
+
+For exact file queries, quote paths and use `--literal-pathspecs`: `--` ends
+option/revision parsing but does not disable pathspec magic such as `:(glob)`.
 
 Start with the largest or most central changed paths. Commit subjects explain
 development chronology, but never use them as the sole evidence that behavior
@@ -99,21 +150,39 @@ such as generated clients, protobuf output, vendored code, and lock files.
 Only include uncommitted changes when the user asks for the current worktree,
 WIP, or uncommitted diff. Keep them separate from committed branch changes:
 
+Freeze the current HEAD as `<head>`; WIP is relative to that checkout, not an
+arbitrary target ref. If combining a different target with WIP, label the two
+contexts explicitly. Collect the layers and tracked net independently:
+
 ```bash
 git status --short
-git diff --name-status
-git diff --numstat
-git diff --cached --name-status
-git diff --cached --numstat
-git ls-files --others --exclude-standard
+git diff --name-status -z --find-renames
+git diff --numstat -z --find-renames
+git diff --cached --name-status -z --find-renames <head>
+git diff --cached --numstat -z --find-renames <head>
+git diff --name-status -z --find-renames <head>
+git diff --numstat -z --find-renames <head>
+git ls-files -z --others --exclude-standard
 ```
 
-Label staged, unstaged, and untracked files separately. Untracked files are not
-present in `git diff`; report their file count, and exclude their lines from the
-line total unless they were safely inspected and counted. Never imply that
-working-tree changes are part of a committed branch delivery. A path may have
-both staged and unstaged hunks, so calculate the overall changed-file count from
-the union of paths rather than adding the three category counts.
+Label staged (HEAD → index), unstaged (index → worktree), and untracked files
+separately. The last diff pair measures tracked net HEAD → worktree: never add
+staged and unstaged line totals, since their edits may overlap or cancel. A file
+can appear in both layers yet have zero net changes. Report layer counts,
+touched-path union, and tracked net file/line totals as distinct quantities.
+For the union, deduplicate literal paths across layers and untracked entries;
+include both names of a rename in that path set, and label it touched paths,
+not rename-aware changed-file count. Net counts come from the net diff with
+rename detection. Use NUL-delimited output (`-z`) if parsing unusual filenames.
+
+Untracked files are absent from these diffs: count them separately, and exclude
+their lines from tracked net totals. If inspected and counted, label their line
+count separately. In an unborn repository, use `git diff --cached` without a
+HEAD argument for staged additions, plus unstaged and untracked layers; report
+no HEAD and no HEAD-relative net total. Unmerged index entries prevent a normal
+net summary; disclose conflicts instead of presenting incomplete counts as a
+clean snapshot. Index/worktree are mutable: recheck status after collection and
+recollect or disclose any observed changes. Never imply WIP is committed delivery.
 
 ## 3. Write the report
 
@@ -125,7 +194,7 @@ headings to the nature of the change instead of inventing a feature narrative.
 
 **一句话**：<交付结果和目的，一两句>
 
-**比较范围**：`<base>@<sha>` → `<target>@<sha>`（merge-base `<sha>`）
+**比较范围**：<mode>；树 `<left>@<sha>` → `<right>@<sha>`；历史 <selection>（如适用，注明 base/target 与唯一 merge-base）
 
 **规模**：<N> 个 commit，<M> 个文件，+<X>/-<Y> 行。<二进制、生成文件或未提交状态说明>
 
@@ -145,23 +214,30 @@ headings to the nature of the change instead of inventing a feature narrative.
 1. <阶段名>（<日期或范围>）：<commit 主题和实际 diff 支持的归纳>
 ```
 
-For a working-tree-only report, replace the comparison line with the branch and
-HEAD identity, write `0 个 commit`, and state staged, unstaged, and untracked
-counts explicitly. For a combined branch-and-WIP request, report committed and
-uncommitted scale separately rather than adding unlike scopes together.
+Keep comparison metadata within the scale block, not a sixth information block.
+For endpoint snapshots, label counts `右侧独有 N 个 commit（辅助历史）`,
+or state that no commit history was selected. For single
+commits, identify the selected parent or root empty tree and report 1 commit.
+For a working-tree-only report, name the branch and HEAD identity (or unborn),
+write `0 个 commit`, and state the three layer counts and tracked net separately.
+For combined branch-and-WIP requests, report committed and uncommitted scale
+separately rather than adding unlike scopes together.
 
 Choose `核心业务流程` only when the diff implements a recognizable runtime or
 user workflow. Otherwise use `核心变更链路`. Choose `主要新增模块` only when
 the change predominantly adds modules; otherwise use `主要变更模块`.
 
 Group the timeline into 1–6 evidence-backed phases. A one-commit fix is one
-phase. Empty history has no invented phase: state that there are no commits in
-the comparison.
+phase. Empty history has no invented phase: state that the selected commit set
+is empty. If history was not selected or is unavailable, say so rather than
+claiming there are zero commits.
 
 ## 4. Handle boundaries
 
-- **No differences**: say the target has no changes relative to the baseline; do
-  not manufacture modules, flow, or phases.
+- **No tree differences**: say the selected tree delta is empty; do not manufacture
+  modules or flow. History can still be nonempty (for example a reverted change),
+  and empty right-only history does not imply an empty endpoint delta. Describe
+  evidenced history separately, without claiming a net delivery.
 - **Initial repository with no commits**: summarize working-tree files only when
   requested; otherwise explain that no commit comparison is available.
 - **Detached HEAD**: use `HEAD@<short-sha>` as the target label.

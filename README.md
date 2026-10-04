@@ -21,15 +21,28 @@ the more neutral “核心变更链路” and “主要变更模块.”
 
 The skill instructs an agent to:
 
-1. resolve the user-specified baseline or the repository's actual default branch;
-2. resolve and consistently use immutable base, target, and merge-base commit
-   identities;
-3. collect commit, file, rename, binary, and line statistics from one consistent
-   Git range;
+1. select branch-introduced, endpoint-snapshot, single-commit, or working-tree
+   mode; preserve explicit `A..B` versus `A...B` diff semantics;
+2. resolve immutable identities and require a unique merge base only for
+   branch-introduced comparisons; ask for a parent when summarizing a merge commit;
+3. collect tree-delta statistics consistently, keeping the selected commit history
+   distinct from the trees being compared;
 4. inspect the patch and representative implementation, tests, and documentation;
-5. separate committed changes from staged, unstaged, and untracked work without
-   double-counting paths shared by multiple worktree states;
+5. separate committed changes, staged/unstaged/untracked layers, touched paths,
+   and tracked net WIP changes—layer line totals can cancel and are not additive;
 6. produce a factual five-part summary without review findings or invented phases.
+
+A branch summary compares its unique merge base to the target. An endpoint
+snapshot (including explicit `A..B` diffs) compares the two trees directly, even
+when their histories diverge. `A...B` diffs use the merge base, whereas `git log
+A...B` selects both sides' unique commits. Single root commits compare against
+an empty tree; single merge commits require an explicitly selected parent.
+Missing or multiple merge bases are disclosed, never silently replaced with a
+snapshot or an arbitrary ancestor. If a required clarification cannot be answered
+in a headless/non-interactive run, the agent returns the missing decision and
+verified facts, then stops that comparison without guessing numbers or waiting
+indefinitely. Independently resolved scopes of a combined request can still be
+reported.
 
 No scripts or runtime protocol are required. Git is the only dependency.
 
