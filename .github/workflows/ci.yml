@@ -12,6 +12,7 @@ jobs:
   validate:
     name: Validate skill structure
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -28,3 +29,21 @@ jobs:
           grep -q '^name:' /tmp/fm.yml || { echo "::error::frontmatter missing name"; exit 1; }
           grep -q '^description:' /tmp/fm.yml || { echo "::error::frontmatter missing description"; exit 1; }
           echo "SKILL.md frontmatter OK"
+
+  git-regression:
+    name: Git contracts (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.11', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Run deterministic Git and dataset checks (not model evals)
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python -m unittest discover -s tests -v
