@@ -65,6 +65,8 @@ frontmatter 中，避免“总结一下仓库”之类的近似请求误触发 b
 
 数字只是索引，不足以证明行为。Skill 还要求阅读实际 patch，以及有代表性的实现、测试和
 文档。commit subject 只负责解释时间线，不能单独作为“功能已实现”的证据。
+按精确文件查询时使用带引号的路径和 `git --literal-pathspecs diff ... -- '<path>'`；
+`--` 结束选项/版本参数解析，但不会关闭 `:(glob)` 等 pathspec magic。
 
 生成代码、protobuf、vendor、lockfile 和二进制会扭曲规模感知，因此需要单独标注。rename
 检测后按一个路径统计；二进制计入文件数但不编造行数；submodule 只描述可观察到的指针变化。

@@ -121,8 +121,11 @@ Inspect the actual patch and representative implementation, tests, and docs:
 
 ```bash
 git diff --find-renames <left> <right>
-git diff --numstat -z --find-renames <left> <right> -- <path>
+git --literal-pathspecs diff --numstat -z --find-renames <left> <right> -- '<path>'
 ```
+
+For exact file queries, quote paths and use `--literal-pathspecs`: `--` ends
+option/revision parsing but does not disable pathspec magic such as `:(glob)`.
 
 Start with the largest or most central changed paths. Commit subjects explain
 development chronology, but never use them as the sole evidence that behavior
