@@ -66,22 +66,32 @@ No scripts or runtime protocol are required. Git is the only dependency.
 
 ## Persistence
 
-The complete report is always returned in the conversation. When the user asks
-to save, archive, hand off, or relay it, the report is also written to:
+The complete report is always returned in the conversation. Only a request to
+save, archive, hand off, or relay also creates a local Markdown report:
 
 ```text
-.agents/handoff/<target>-vs-<base>.md
+.agents/handoff/<UTC>-<target>-<target-id>-vs-<base>-<base-id>-<nonce>.md
 ```
 
-The repository should ignore `.agents/handoff/` so generated reports are not
-committed accidentally. A write failure does not prevent the conversational
-summary.
+WIP-only filenames use `<UTC>-<target>-<head-id>-working-tree-<nonce>.md`.
+Safe, bounded ref labels, short SHAs, and a random suffix avoid name collisions;
+exclusive creation preserves existing reports even on repeated saves. Reports
+include UTC generation time, full comparison SHAs, comparison mode, and explicit
+WIP scope. WIP observations cannot be reconstructed from HEAD alone.
+
+The [handoff contract](references/handoff.md) requires symlink-safe directories
+and file creation; if the agent's tools cannot guarantee that, saving is skipped
+with an explanation. A failed save never blocks the conversational report.
+The agent checks the actual report path's ignore status and warns if necessary,
+but does not change ignore rules, overwrite old reports, or stage any files.
 
 ## Evaluation coverage
 
 The bundled eval set covers multi-module feature branches, one-commit bug fixes,
 dirty worktrees, generated-code-heavy changes, empty comparisons, and near-miss
-requests that should not trigger this skill.
+requests that should not trigger this skill. The separate [handoff scenarios](evals/handoff.json)
+cover metadata, repeated saves, collisions, symlinks, and persistence failures;
+these are behavioral prompts, not proof of a host's filesystem safety.
 
 The [eight evidence cases](evals/evidence.json) additionally specify M/E mapping,
 committed deletion, WIP layers, generated-output provenance and rename coverage,

@@ -323,16 +323,19 @@ distinguish observed implementation from inferred intent.
 ## 5. Deliver
 
 Always show the complete report in the conversation. Persist it only when the
-user asks to save, archive, hand off, or relay the result:
+user asks to save, archive, hand off, or relay the result. Before any persistence,
+read [the handoff contract](references/handoff.md): it defines the required
+metadata and safe-write procedure, not a runtime service.
 
-```text
-.agents/handoff/<target>-vs-<base>.md
-```
+Save under the current repository/worktree root's `.agents/handoff/`, with a UTC
+timestamp, safe ref labels, short commit IDs, and a unique suffix in the filename.
+Include generation time, full immutable comparison SHAs, comparison mode, and
+explicit WIP scope in the saved report. WIP is a time-bound observation, not a
+snapshot recoverable from HEAD alone.
 
-For a working-tree-only report, use `<target>-working-tree.md`. Sanitize each ref
-component by replacing every character outside `[A-Za-z0-9._-]` with `-`.
-
-Before writing, check whether `.agents/handoff/` is ignored. If it is not, warn
-the user so the report is not committed accidentally. If the directory cannot
-be written, still return the full report and mention that persistence failed;
-file output must not block the summary.
+Create a new file exclusively; never overwrite a previous report or follow a
+symlink in the destination directory chain or file. If safe creation cannot be
+ensured, skip saving. Check the actual destination's Git ignore status and warn
+if it is not ignored (or the check fails); do not edit ignore rules or stage the
+report. On failure, explain why saving failed and still return the complete
+report. Announce a saved path only after verifying the write succeeded.

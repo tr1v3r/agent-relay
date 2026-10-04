@@ -159,15 +159,24 @@ M/E 是本 Skill 自有的报告局部约定，不是 AOCI 多轴标签、对象
 ## 持久化策略
 
 普通总结只在对话中返回，避免一次只读问题意外修改工作区。用户明确说保存、归档、交接或
-relay 时，才写入：
+relay 时，才读取 [安全交接契约](references/handoff.md)，在当前 worktree 根目录写入：
 
 ```text
-.agents/handoff/<target>-vs-<base>.md
+.agents/handoff/<UTC>-<target>-<target-id>-vs-<base>-<base-id>-<nonce>.md
+.agents/handoff/<UTC>-<target>-<head-id>-working-tree-<nonce>.md
 ```
 
-working-tree-only 报告使用 `<target>-working-tree.md`。文件名中不属于
-`[A-Za-z0-9._-]` 的字符统一替换为 `-`。写入前检查目录是否被 Git 忽略；写入失败只影响
-持久化，不阻断对话中的完整报告。
+文件名使用有长度上限的安全 ref slug、短 SHA、UTC 时间和随机后缀；排他创建才是防覆盖的
+最终保障，不能依赖“先判断不存在，再普通写入”。重复保存生成新版本，不提供覆盖操作。
+报告内记录 UTC 生成时间、完整 base/target/merge-base SHA（不适用时明确原因）、比较
+mode、WIP 的 staged/unstaged/untracked 包含范围及统计口径。WIP 另记观察时间与 HEAD，
+不声称仅凭 HEAD 即可重建未提交内容；先完成取证，再保存，避免报告把自身计入变化。
+
+保存检查当前 worktree 的物理根、整个目标目录链及文件，拒绝 symlink（包括悬空链接）；
+实际创建也必须保持 no-follow 和目录约束，不能只靠写入前的一次路径检查。若工具不能
+保证安全创建则放弃落盘。检查实际文件的 Git ignore 状态，未忽略或检查失败时告警，
+不自动修改 ignore 配置或 index。权限、碰撞、路径安全或写入失败均不阻断完整对话报告，
+只有验证写入成功后才宣称已保存。以上仍是纯指令契约，没有新增运行时服务或 collector。
 
 ## 提示词设计原则
 
@@ -192,7 +201,9 @@ working-tree-only 报告使用 `<target>-working-tree.md`。文件名中不属�
 - 产品能力概览等不应触发本 Skill 的近似请求。
 
 这些用例重点验证比较范围、数字口径、标题选择、阶段数量和落盘副作用，而不是只检查
-输出中是否出现某些关键词。
+输出中是否出现某些关键词。[独立交接场景](evals/handoff.json) 补充元数据、重复保存、
+安全文件名碰撞、目录/文件 symlink、工具能力不足以及 ignore/写入失败的行为要求。
+这些 prompt 不是已执行的文件系统安全测试；具体 host 的安全写入能力仍需执行时确认。
 
 [八个 evidence 用例](evals/evidence.json)补充编号映射、已提交删除、WIP 分层、生成溯源与
 rename、保持范围的追问、空比较、非零历史但净变化为零，以及 staged rename 后 unstaged

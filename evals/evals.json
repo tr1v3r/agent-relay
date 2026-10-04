@@ -22,9 +22,17 @@
       "id": 3,
       "fixture": "wip",
       "prompt": "总结当前未提交 WIP，包括 staged、unstaged 和 untracked，并保存给后续 agent。",
-      "expected_output": "分别列分层规模、touched 路径并集和 HEAD 到工作树的 tracked 净规模。",
+      "expected_output": "分别列分层规模、touched 路径并集和 HEAD 到工作树的 tracked 净规模；完整返回报告，并依当前 handoff 契约安全创建新文件，无法安全保存时说明原因而不覆盖旧报告。",
       "files": [],
-      "expectations": ["0 个 commit；staged 2、unstaged 2、untracked 2 个路径", "整体 touched 路径并集为5，不把类别数相加", "tracked 净 diff 为2个文件、+2/-0，common.txt 分层抵消", "不将 untracked 或 ignored 内容加入 Git 行数", "保存前检查忽略状态，正文仍完整返回"]
+      "expectations": [
+        "0 个 commit；staged 2、unstaged 2、untracked 2 个路径",
+        "整体 touched 路径并集为5，不把类别数相加",
+        "tracked 净 diff 为2个文件、+2/-0，common.txt 分层抵消",
+        "不将 untracked 或 ignored 内容加入 Git 行数",
+        "因用户明确要求保存而按当前 handoff 契约排他创建新报告；不覆盖旧文件，能力不足或失败时明确说明",
+        "检查实际候选报告文件的 Git ignore 状态，而不只检查 .agents/handoff 目录",
+        "无论保存成功与否，对话中始终给出完整报告"
+      ]
     },
     {
       "id": 4,
