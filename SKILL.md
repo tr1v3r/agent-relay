@@ -127,10 +127,24 @@ git --literal-pathspecs diff --numstat -z --find-renames <left> <right> -- '<pat
 For exact file queries, quote paths and use `--literal-pathspecs`: `--` ends
 option/revision parsing but does not disable pathspec magic such as `:(glob)`.
 
-Start with the largest or most central changed paths. Commit subjects explain
-development chronology, but never use them as the sole evidence that behavior
-was implemented. If implementation cannot be inspected, narrow the claim rather
-than filling gaps from names or commit messages.
+Read progressively rather than dumping a large patch into context:
+
+1. Inventory the whole comparison with path status and numstat; group paths into
+   modules and distinguish handwritten changes from generated/bulk artifacts.
+2. Read bounded patches for entry points, central changed behavior, and relevant
+   tests/docs first; expand to related callers or contracts when a claim needs
+   them. Read the selected commit's content, not an unrelated current checkout.
+3. If output is truncated, continue the relevant file/hunk before citing it.
+   Filename matches, commit subjects, and statistics alone are not behavior
+   evidence. Narrow or omit claims whose implementation cannot be inspected.
+
+Keep exact whole-comparison statistics separate from semantic reading coverage.
+In the scale block, briefly name the inspected areas and anything only counted
+or not inspected (for example generated output). Do not call representative
+sampling a complete code review or claim all changed behavior was verified.
+Reading a test establishes what it checks, not that it passed; report execution
+results only when actually observed. Commit subjects explain chronology, not
+proof of implementation.
 
 Call out generated or bulk artifacts when they dominate the totals. Check
 repository conventions and `.gitattributes` in addition to recognizable paths
@@ -188,17 +202,22 @@ headings to the nature of the change instead of inventing a feature narrative.
 **比较范围**：<mode>；树 `<left>@<sha>` → `<right>@<sha>`；历史 <selection>（如适用，注明 base/target 与唯一 merge-base）
 
 **规模**：<N> 个 commit，<M> 个文件，+<X>/-<Y> 行。<二进制、生成文件或未提交状态说明>
+**阅读覆盖**：<已读实现/测试范围；仅统计或未检查部分>
+**编号**：M=模块，E=证据；仅在本报告内有效，可追问“展开 M1 / E1”。
 
 ## <核心业务流程 | 核心变更链路>
 
-<入口或变更起点> → <关键步骤>（<关键路径>）
+<入口或变更起点>（M1 <模块名>，E1）→ <关键步骤>
   → <最终行为或影响>
 
 ## <主要新增模块 | 主要变更模块>
 
-| 模块 | 变更量 | 内容 |
+| 编号 / 模块 | 变更量 | 内容 / 证据 |
 | --- | ---: | --- |
-| <目录/包名> | +<X>/-<Y> | <职责和实质变化> |
+| M1 <目录/包名> | +<X>/-<Y> | <职责和实质变化>（E1） |
+
+**证据**：
+- E1：<范围与完整 SHA 或工作区状态>，<实际读取的路径、符号/行段或 diff hunk> → <支持的事实>
 
 ## 开发演进
 
@@ -222,6 +241,51 @@ Group the timeline into 1–6 evidence-backed phases. A one-commit fix is one
 phase. Empty history has no invented phase: state that the selected commit set
 is empty. If history was not selected or is unavailable, say so rather than
 claiming there are zero commits.
+
+### Compact references and follow-up
+
+Use `M1`, `M2`, ... for modules and `E1`, `E2`, ... for evidence, allocated in
+first-appearance order. Keep readable names beside module IDs. Define each ID
+once, reuse it consistently, and resolve every reference inside the report;
+an ID is a local handle, not a permanent identity or an importance score.
+A shared source can support several modules through the same E entry, but only
+for facts that source actually establishes. Do not force separate evidence for
+every sentence or invent modules merely to fill the template.
+
+Keep evidence definitions inside the module block, not a sixth top-level
+section. Each E entry identifies its supporting fact and a precise source:
+
+- For committed content, bind the full commit SHA and repository-relative path
+  plus the inspected symbol, line span, or diff hunk. Full SHA aliases may be
+  defined once and reused; abbreviated display IDs alone are not the binding.
+- For committed deletions, use the comparison's old-side SHA and old path; for
+  committed renames, record old → new paths and which side was read. In a branch
+  comparison the old tree is the merge-base, not necessarily the baseline tip.
+- For a diff or Git-derived count, bind the exact frozen endpoints, comparison
+  mode, and any path filter/calculation. Do not substitute a commit subject.
+- For WIP, label staged, unstaged, or untracked, the observed HEAD (or unborn),
+  and the inspected path/range. Bind the actual layer pair: staged is HEAD →
+  index (empty tree → index when unborn); unstaged is index → worktree. WIP
+  deletions and renames identify the old path in that old layer, plus the new
+  path for a rename. An unstaged deletion's old content is in the index, not
+  necessarily HEAD; never invent a commit SHA for the index or worktree. These
+  are mutable observations; recheck before reuse and disclose changes.
+
+Use links to inspected sources where the host can resolve them; do not invent
+remote URLs or link a deleted path as though it exists in the target. Missing
+objects or unavailable lines mean limited evidence, not a fabricated locator.
+For a one-module fix, a single M/E pair and inline source suffice. With an empty
+tree delta, omit M/E scaffolding and do not invent changed modules or a flow.
+This does not imply empty history: preserve any nonzero selected commit count
+and evidence-backed evolution (for example a change followed by its revert).
+
+On “expand M2 / E3”, keep the original comparison mode, frozen endpoints, and
+ID meanings, and read only the additional relevant evidence. Append new IDs
+without reassigning old ones. Do not silently switch to current HEAD; if the
+original report or binding is unavailable, ask for it. A changed worktree needs
+an explicitly labelled fresh observation rather than confirmation of old WIP.
+Return the requested detail; the initial response still contains all five blocks.
+See [evidence examples](references/evidence.md) for compact layouts and edge cases.
 
 ## 4. Handle boundaries
 
