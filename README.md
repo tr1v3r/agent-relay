@@ -17,6 +17,24 @@ Headings adapt to the change. A feature can use “核心业务流程” and “
 a bug fix, refactor, deletion, configuration update, or documentation change uses
 the more neutral “核心变更链路” and “主要变更模块.”
 
+## Compact references
+
+Reports use `M1`, `M2`, … for named modules and `E1`, `E2`, … for evidence.
+A single legend explains them, and every reference resolves within that report
+to inspected source, a frozen Git identity, or an explicitly labelled worktree
+observation. Ask “expand M2 / E1” to see more detail without changing the original
+comparison. IDs are local to one report, not permanent repository identifiers.
+
+Large diffs are read progressively: inventory the full change set, then inspect
+central implementation and related tests/contracts. The report distinguishes
+exact overall statistics from sampled reading coverage; reading tests does not
+imply they passed. Small fixes need only one M/E pair. An empty tree delta gets
+no artificial references, but any nonzero selected history is still reported.
+
+This is an original lightweight adaptation inspired by AOCI's compact semantic
+representation, not an AOCI protocol implementation. See the
+[evidence guide](references/evidence.md) for examples and pinned upstream sources.
+
 ## How it works
 
 The skill instructs an agent to:
@@ -64,6 +82,13 @@ summary.
 The bundled eval set covers multi-module feature branches, one-commit bug fixes,
 dirty worktrees, generated-code-heavy changes, empty comparisons, and near-miss
 requests that should not trigger this skill.
+
+The [eight evidence cases](evals/evidence.json) additionally specify M/E mapping,
+committed deletion, WIP layers, generated-output provenance and rename coverage,
+scope-preserving follow-up, empty comparisons, zero-net-change history, and a
+staged rename followed by an unstaged deletion. Fixture associations make the
+Git inputs reproducible; dataset validation and Git-fact tests do not establish
+that a model has passed these behavioral expectations.
 
 ## Installation
 

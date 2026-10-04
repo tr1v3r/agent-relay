@@ -1,0 +1,112 @@
+{
+  "skill_name": "agent-relay",
+  "dataset_type": "behavior",
+  "evals": [
+    {
+      "id": 401,
+      "prompt": "总结这个多模块分支相对 main 的变化，用短编号让我方便追问入口和策略各自做了什么，不用运行测试。",
+      "expected_output": "五部分报告含 M/E 图例，可读模块名、逐项可解析的证据以及精确范围；不会把阅读测试当成运行通过。",
+      "files": [],
+      "expectations": [
+        "每个 M 引用均有唯一模块定义及可读名称，编号按首次出现递增",
+        "每个 E 引用均有唯一证据定义，含事实、完整 SHA 绑定和实际读取的路径及符号/行段/hunk",
+        "共享 E 只用于它实际支持的模块事实，没有悬空或重绑编号",
+        "保留五部分，证据定义留在模块块内而非第六主节",
+        "未运行测试时不声称测试通过，未要求保存时不落盘"
+      ]
+    },
+    {
+      "id": 402,
+      "fixture": "deletion",
+      "prompt": "总结当前分支相对 main 删除了什么，用最简 M/E 编号给我定位删除前的实现。",
+      "expected_output": "单模块修复只需一组短编号，删除证据准确绑定比较旧侧，且只有一个开发阶段。",
+      "files": [],
+      "expectations": [
+        "删除证据绑定比较旧侧完整 SHA 和旧路径，不链接成 target 仍存在的文件",
+        "分支比较使用 merge-base 作为旧侧而非未经验证的 main tip",
+        "使用中性变化标题和单阶段，没有为编号虚构额外模块",
+        "单个 M/E 对保持简洁，完整统计不因证据只引用部分行而改变"
+      ]
+    },
+    {
+      "id": 403,
+      "fixture": "wip",
+      "prompt": "总结当前未提交修改，用 E 编号区分同一文件的 staged 和 unstaged 证据，也包含 untracked。不要保存。",
+      "expected_output": "WIP 证据按实际状态标注，不把 HEAD 链接当成未提交内容，不合并不同状态的证据身份。",
+      "files": [],
+      "expectations": [
+        "每个 WIP 证据标明 staged、unstaged 或 untracked、观察时 HEAD 及实际读取路径范围",
+        "同一路径不同状态不会被一个不分状态的引用掩盖",
+        "不声称 WIP 内容属于 HEAD 中不可变提交",
+        "没有落盘或运行未请求的变更命令"
+      ]
+    },
+    {
+      "id": 404,
+      "fixture": "artifacts",
+      "prompt": "summarize this branch against main; generated code dominates the large diff, and a file was renamed. Keep the overview short but let me expand modules later.",
+      "expected_output": "Exact full-scope statistics plus explicit semantic reading coverage, stable module handles, and correctly sided rename evidence.",
+      "files": [],
+      "expectations": [
+        "The report distinguishes full Git inventory/counts from representative source inspection",
+        "Generated or bulk output that was only counted is disclosed, not presented as fully read",
+        "Relevant generation inputs/configuration are inspected when present; missing provenance is disclosed without guessing or running generators",
+        "Rename evidence names old and new paths and binds the side actually inspected",
+        "Truncated or unread content is not assigned fabricated line evidence or verified behavior",
+        "The initial response contains all five information blocks, not a menu requiring follow-up"
+      ]
+    },
+    {
+      "id": 405,
+      "prompt": "展开刚才报告的 M2 和 E3。现在分支 HEAD 已经前进；工作区也有新改动，但我问的是刚才那个报告。",
+      "expected_output": "有原报告时沿用冻结端点与编号；缺失时先询问。不能把新 HEAD 或新 WIP 冒充原报告的证据。",
+      "files": [],
+      "expectations": [
+        "有原报告时保持原比较模式、完整端点 SHA 和 M2/E3 定义",
+        "没有原报告或身份映射时询问而非猜测编号含义",
+        "新增证据只追加编号，不重新分配旧编号",
+        "WIP 变化被明确标为新观察而非对旧 WIP 的确认",
+        "只展开请求的相关细节，不静默生成一个新范围的全量报告"
+      ]
+    },
+    {
+      "id": 406,
+      "fixture": "empty",
+      "prompt": "总结当前分支相对 main 的变化，用短编号方便追问；两个 ref 指向同一个 commit。",
+      "expected_output": "准确给出无差异和零规模，不因短编号请求制造模块、证据、流程或阶段。",
+      "files": [],
+      "expectations": [
+        "报告零规模与无差异",
+        "不生成 M/E 图例或空证据模板",
+        "没有虚构模块、流程、阶段或证据身份"
+      ]
+    },
+    {
+      "id": 407,
+      "fixture": "net-zero-history",
+      "prompt": "总结当前分支相对 origin/main 的变化，用短编号方便追问。分支包含修改及其 revert，最终 tree 没有净变化。",
+      "expected_output": "相对 origin/main 报告 2 个提交、0 个净变更文件和 +0/-0 行，省略 M/E 外壳与虚构模块，保留修改再撤销的历史演进。",
+      "files": [],
+      "expectations": [
+        "以用户指定的 origin/main 为基线，空 tree delta 报告 0 个净变更文件和 +0/-0 行，选定历史含 2 个 commit",
+        "不生成 M/E 图例、空证据表、变更模块或净行为流程",
+        "基于实际提交和 patch 解释修改及 revert，不把无净变化说成无历史",
+        "不为了省略编号而删除有证据的开发演进"
+      ]
+    },
+    {
+      "id": 408,
+      "fixture": "wip-rename-delete",
+      "prompt": "总结未提交 WIP：common.txt 已暂存重命名为 moved.txt，随后在工作区删除了 moved.txt。用 M/E 编号说明各层证据；HEAD 从未有 moved.txt。不要保存。",
+      "expected_output": "区分 HEAD:common.txt → index:moved.txt 的 staged rename 与 index:moved.txt → worktree缺失的 unstaged deletion，不给 index 伪造提交身份。",
+      "files": [],
+      "expectations": [
+        "staged rename 证据标明 HEAD → index 以及 common.txt → moved.txt",
+        "unstaged deletion 证据标明 index → worktree，实际旧路径为 index:moved.txt",
+        "不引用不存在的 HEAD:moved.txt 作为删除前内容，不给 index 或 worktree 编造 commit SHA",
+        "各状态以独立 E 引用或同一 E 内明确不同层对的来源表示，不混淆比较身份",
+        "HEAD SHA 只标记观察时仓库身份，不声称它可以重建所有 WIP 内容"
+      ]
+    }
+  ]
+}
