@@ -1,81 +1,150 @@
 {
   "skill_name": "agent-relay",
+  "dataset_type": "behavior",
   "evals": [
     {
       "id": 1,
-      "prompt": "总结当前 feature/payment-retry 分支相对 origin/main 的修改。这个分支有多次提交，既改了服务入口，也新增了重试包和测试；只需要高层摘要，不做 code review。",
-      "expected_output": "基于明确的 origin/main...feature/payment-retry 范围输出五部分摘要，记录 ref SHA 和 merge-base，读取实际 diff 后归纳主流程与模块，并按真实提交历史分阶段。",
+      "fixture": "divergent",
+      "prompt": "总结当前 feature/payment-retry 分支相对 origin/main 的修改，只需要高层摘要，不做 code review。",
+      "expected_output": "基于唯一 merge-base 到 target 的 diff 输出五部分摘要，记录不可变 SHA，区分 base..target 右侧历史。",
       "files": [],
-      "expectations": [
-        "使用用户明确指定的 origin/main 作为 baseline",
-        "比较范围包含 base、target 和 merge-base 的 commit 标识",
-        "提交数、文件数和增删行数均来自一致的 Git 范围",
-        "核心业务流程由实际实现和测试支持，而不只复述 commit 标题",
-        "输出不包含缺陷分析、改进建议或审批判断",
-        "未在用户没有要求保存时写入 .agents/handoff"
-      ]
+      "expectations": ["明确 baseline 和 target SHA 及 merge-base", "报告 2 个右侧提交、1 个文件、+2/-0 行", "不把 main-only.txt 报为分支删除", "从实际内容归纳，不把 fixture 分支名当支付功能证据", "不做 code review，不自动保存"]
     },
     {
       "id": 2,
-      "prompt": "看看这个分支相对仓库默认分支改了什么。它只有一个修复提交，主要删除了一条过时的 fallback。",
-      "expected_output": "从 origin/HEAD 解析默认基线，为单提交删除型修复使用核心变更链路和主要变更模块，只生成一个开发阶段，不虚构新增模块或业务流程。",
+      "fixture": "deletion",
+      "prompt": "看看这个分支相对仓库默认分支改了什么。",
+      "expected_output": "从 origin/HEAD 找基线，说明删除 fallback 的单提交变更。",
       "files": [],
-      "expectations": [
-        "优先从 origin/HEAD 解析默认基线",
-        "使用核心变更链路和主要变更模块等中性标题",
-        "开发演进只有一个证据充分的阶段",
-        "删除行和删除文件被正确计入规模",
-        "没有虚构新增能力或额外开发阶段"
-      ]
+      "expectations": ["使用 origin/HEAD 的 origin/main", "报告 1 个 commit、1 个文件、+0/-1 行", "只生成一个证据充分的阶段，不虚构新增模块"]
     },
     {
       "id": 3,
-      "prompt": "总结我现在还没提交的 WIP，仓库里同时有 staged、unstaged 和两个 untracked 文件。保存一份给后续 agent 接手。",
-      "expected_output": "以当前 branch 和 HEAD 标识工作区范围，分别统计 staged、unstaged、untracked；不把未跟踪文件混入 Git 行数；返回报告并安全写入 .agents/handoff/<target>-working-tree.md。",
+      "fixture": "wip",
+      "prompt": "总结当前未提交 WIP，包括 staged、unstaged 和 untracked，并保存给后续 agent。",
+      "expected_output": "分别列分层规模、touched 路径并集和 HEAD 到工作树的 tracked 净规模。",
       "files": [],
-      "expectations": [
-        "分别标注 staged、unstaged 和 untracked 范围",
-        "报告 0 个 commit，不声称 WIP 已被提交",
-        "未跟踪文件默认不计入 git diff 的增删行总数",
-        "同一路径同时有 staged 和 unstaged 修改时，整体文件数按路径并集计算",
-        "因用户明确要求保存而写入 working-tree 命名的 handoff 文件",
-        "写入前检查 .agents/handoff 是否被忽略"
-      ]
+      "expectations": ["0 个 commit；staged 2、unstaged 2、untracked 2 个路径", "整体 touched 路径并集为5，不把类别数相加", "tracked 净 diff 为2个文件、+2/-0，common.txt 分层抵消", "不将 untracked 或 ignored 内容加入 Git 行数", "保存前检查忽略状态，正文仍完整返回"]
     },
     {
       "id": 4,
-      "prompt": "summarize the release branch diff against main; most of the changed lines are protobuf output and a lockfile, with two binary fixtures and one renamed package",
-      "expected_output": "Produce an English report with exact rename-aware path and text-line counts, exclude binary files from line totals, identify generated/bulk artifacts as dominant, and avoid overstating handwritten implementation size.",
+      "fixture": "artifacts",
+      "prompt": "summarize the release branch diff against origin/main, including the generated files and binary fixtures",
+      "expected_output": "English report: five change records, +150/-0 text lines, two binary files and one pure rename; generated/bulk artifacts dominate.",
       "files": [],
-      "expectations": [
-        "The report is written in English",
-        "Rename detection counts the renamed package as one changed path",
-        "Binary paths are counted but excluded from text line totals",
-        "Generated protobuf and lockfile changes are called out as dominating scale",
-        "The report records immutable comparison commit identifiers"
-      ]
+      "expectations": ["Report is in English", "Pure rename is one change record and +0/-0", "Two binary records count as files but not text lines", "Generated protobuf and lockfile account for all 150 added text lines", "Do not describe 150 lines as handwritten implementation"]
     },
     {
       "id": 5,
-      "prompt": "总结一下当前分支相对 origin/main 的改动；两个 ref 现在指向同一个 commit。",
-      "expected_output": "明确报告没有差异和零规模，不制造变更流程、模块或开发阶段。",
+      "fixture": "empty",
+      "prompt": "总结当前分支相对 origin/main 的改动。",
+      "expected_output": "两个 ref 同 SHA，零规模，无虚构流程、模块或阶段。",
       "files": [],
-      "expectations": [
-        "报告 0 个 commit、0 个文件和 +0/-0 行",
-        "明确 target 与 baseline 没有差异",
-        "没有虚构模块、流程或开发阶段"
-      ]
+      "expectations": ["0 个 commit、0 个文件、+0/-0", "明确没有差异", "不虚构开发阶段"]
     },
     {
-      "id": 6,
-      "prompt": "总结一下这个仓库目前提供了哪些产品能力，并告诉我接下来最值得做什么。",
-      "expected_output": "This is a repository/product overview with recommendations rather than a Git branch or diff summary, so agent-relay should not trigger.",
+      "id": 7,
+      "fixture": "divergent",
+      "prompt": "不要 merge-base 比较，只比较 origin/main 和 HEAD 两个端点快照。",
+      "expected_output": "直接 base→target，main-only.txt 的删除仅是端点差异，不当成目标分支交付。",
       "files": [],
-      "expectations": [
-        "不套用 branch-vs-base 五段式报告",
-        "不因出现‘总结’和‘仓库’就自动创建 .agents/handoff 文件",
-        "可以正常提供产品能力概览与建议"
-      ]
+      "expectations": ["2 个文件、+2/-1", "不使用三点 diff", "如列提交数，说明右侧独有历史是辅助信息，不是完整快照差异的交付数"]
+    },
+    {
+      "id": 8,
+      "fixture": "divergent",
+      "prompt": "总结显式范围 origin/main..HEAD 的端点差异。",
+      "expected_output": "保留两点端点语义，不偷偷改成 branch-introduced diff。",
+      "files": [],
+      "expectations": ["2 个文件、+2/-1", "若列 origin/main..HEAD 的2个提交，标明仅右侧独有历史"]
+    },
+    {
+      "id": 9,
+      "fixture": "divergent",
+      "prompt": "总结 origin/main...HEAD 这组三点 diff。",
+      "expected_output": "使用唯一 merge-base→HEAD，右侧历史而非对称差。",
+      "files": [],
+      "expectations": ["1 个文件、+2/-0", "目标侧历史2个提交，不把3个对称差提交当目标工作"]
+    },
+    {
+      "id": 10,
+      "fixture": "commits",
+      "prompt": "只总结 main~1 这个单独提交，不是到 HEAD 的整个范围。",
+      "expected_output": "普通 single commit，比较其父提交到它，历史仅该提交。",
+      "files": [],
+      "expectations": ["1 个 commit、1 个文件、+1/-0", "只涉及 one.txt，不包含 side.txt"]
+    },
+    {
+      "id": 11,
+      "fixture": "commits",
+      "prompt": "总结 main~2 这个根提交本身。",
+      "expected_output": "用动态 empty tree→root，不调用不存在的 root parent。",
+      "files": [],
+      "expectations": ["1 个 commit、1 个文件、+1/-0", "只涉及 common.txt"]
+    },
+    {
+      "id": 12,
+      "fixture": "commits",
+      "prompt": "只总结 HEAD 这个 merge commit。",
+      "expected_output": "先询问选哪个 parent，不暗设 first-parent。",
+      "files": [],
+      "expectations": ["指出 HEAD 有多个 parent 并询问", "未确认前不声称唯一 diff 规模"]
+    },
+    {
+      "id": 13,
+      "fixture": "commits",
+      "prompt": "只总结 HEAD 这个 merge commit，明确选择 parent 1。",
+      "expected_output": "HEAD^1→HEAD 的 diff，单提交历史只有 HEAD。",
+      "files": [],
+      "expectations": ["1 个 commit，不误用 HEAD^1..HEAD 的2个可达提交", "1 个文件 side.txt、+1/-0"]
+    },
+    {
+      "id": 14,
+      "fixture": "special-paths",
+      "prompt": "总结 HEAD 相对 origin/main 的修改，注意文件名含空格、制表符、换行、中文和 pathspec 字符。",
+      "expected_output": "NUL 安全读取与 literal pathspec，六个文件不拆错或误匹配。",
+      "files": [],
+      "expectations": ["6 个文件、+6/-0", "特殊路径显示可辨认，不把制表符或换行当记录分隔", "不通过 shell 拼接执行路径"]
+    },
+    {
+      "id": 15,
+      "fixture": "empty",
+      "prompt": "总结当前分支相对 does-not-exist 的改动。",
+      "expected_output": "明确指定 ref 无效即停止询问，不回退默认基线。",
+      "files": [],
+      "expectations": ["指出 does-not-exist 无效", "不静默切换 origin/main", "不生成伪造规模"]
+    },
+    {
+      "id": 16,
+      "fixture": "unrelated",
+      "prompt": "总结 other 分支相对 main 引入的工作。",
+      "expected_output": "无共同祖先不能归因为分支引入；询问是否需要快照比较。",
+      "files": [],
+      "expectations": ["不把 main→other 端点差异当分支工作", "解释 lineage 不可推断"]
+    },
+    {
+      "id": 17,
+      "fixture": "criss-cross",
+      "prompt": "总结 right 相对 left 分支引入的变化。",
+      "expected_output": "检测多个 merge-base 并请求选择，不任取第一个。",
+      "files": [],
+      "expectations": ["说明有2个最佳共同祖先", "不任取一个或静默转端点比较"]
+    },
+    {
+      "id": 18,
+      "fixture": "unborn",
+      "prompt": "总结还没有第一次提交的仓库 WIP。",
+      "expected_output": "无 HEAD，分别汇报 staged 和 untracked，不编造 HEAD 净比较。",
+      "files": [],
+      "expectations": ["0 个 commit，staged 1、unstaged 0、untracked 1", "不声称存在 HEAD SHA 或 HEAD→WT 净 diff"]
+    },
+    {
+      "id": 19,
+      "fixture": "net-zero-history",
+      "prompt": "总结当前分支相对 origin/main 的变化。",
+      "expected_output": "两次提交互相抵消：净 diff 空，但真实历史仍有2个提交。",
+      "files": [],
+      "expectations": ["2 个 commit、0 个文件、+0/-0", "不把净零改动写成零提交", "不虚构最终交付能力"]
     }
   ]
 }
