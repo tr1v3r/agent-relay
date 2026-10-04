@@ -1,0 +1,14 @@
+[
+  {"query": "总结当前 feature/payment-retry 相对 origin/main 的改动，我要给同事快速交接，不做代码审查。", "should_trigger": true},
+  {"query": "看看这个分支改了什么，基线用仓库默认分支，重点说模块和主流程。", "should_trigger": true},
+  {"query": "summarize the changes between v1.2.0 and v1.3.0 as two snapshots, not merge-base", "should_trigger": true},
+  {"query": "把 HEAD 这个提交的变化概括给我，先不要写文件。", "should_trigger": true},
+  {"query": "总结没提交的 WIP，分开 staged 和 unstaged，再给接手 agent 存一份。", "should_trigger": true},
+  {"query": "我只想理解 release...feature 的 diff，列清规模和实际变更，不要审批意见。", "should_trigger": true},
+  {"query": "总结一下这个仓库目前提供了哪些产品能力，并告诉我接下来最值得做什么。", "should_trigger": false},
+  {"query": "review 这个分支相对 main 的代码，优先找安全缺陷和回归问题。", "should_trigger": false},
+  {"query": "帮我写面向客户的 v1.3 发布说明，要突出价值并隐藏内部实现细节。", "should_trigger": false},
+  {"query": "这段 git diff 里为什么会引入死锁？请定位缺陷并给修复建议。", "should_trigger": false},
+  {"query": "团队周报总结一下，内容是会议和项目进度，不需要看 Git。", "should_trigger": false},
+  {"query": "给这个仓库做新人 onboarding，讲整体架构、环境安装和下一步学习路线。", "should_trigger": false}
+]
