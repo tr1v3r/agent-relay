@@ -31,15 +31,16 @@
     {
       "id": 3,
       "prompt": "总结我现在还没提交的 WIP，仓库里同时有 staged、unstaged 和两个 untracked 文件。保存一份给后续 agent 接手。",
-      "expected_output": "以当前 branch 和 HEAD 标识工作区范围，分别统计 staged、unstaged、untracked；不把未跟踪文件混入 Git 行数；返回报告并安全写入 .agents/handoff/<target>-working-tree.md。",
+      "expected_output": "以当前 branch 和 HEAD 标识工作区范围，分别统计 staged、unstaged、untracked；不把未跟踪文件混入 Git 行数；完整返回报告，并依当前 handoff 契约安全创建新文件，无法安全保存时说明原因而不覆盖旧报告。",
       "files": [],
       "expectations": [
         "分别标注 staged、unstaged 和 untracked 范围",
         "报告 0 个 commit，不声称 WIP 已被提交",
         "未跟踪文件默认不计入 git diff 的增删行总数",
-        "同一路径同时有 staged 和 unstaged 修改时，整体文件数按路径并集计算",
-        "因用户明确要求保存而写入 working-tree 命名的 handoff 文件",
-        "写入前检查 .agents/handoff 是否被忽略"
+        "触及路径数按 staged、unstaged 与 untracked 的字面路径并集计算，与 tracked 净 diff 文件数分开标注",
+        "因用户明确要求保存而按当前 handoff 契约排他创建新报告；不覆盖旧文件，能力不足或失败时明确说明",
+        "检查实际候选报告文件的 Git ignore 状态，而不只检查 .agents/handoff 目录",
+        "无论保存成功与否，对话中始终给出完整报告"
       ]
     },
     {

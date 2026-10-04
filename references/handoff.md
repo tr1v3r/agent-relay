@@ -4,11 +4,21 @@ Read this reference only when saving is requested. The report is useful even
 when persistence is unavailable: always return it in the conversation. Saving
 adds a local Markdown artifact, not a collector, background job, or Git commit.
 
+This save procedure only creates new, generated filenames under the current
+worktree's `.agents/handoff/`. If the user requests a different location or an
+exact filename, explain the supported destination and ask before substituting
+it. Without confirmation of that substitution (including non-interactive
+execution), return the report without saving; do not silently redirect the output
+or treat the request as permission to overwrite. A custom export is a separate explicitly scoped task,
+not an exception to this procedure's path and non-overwrite guarantees.
+
 ## Identity inside the report
 
-Prepend a compact metadata block to the saved five-part report. Use the same
-facts already collected for the summary; do not re-resolve moving refs at save
-time. Escape ref labels as data, not executable shell text or Markdown syntax.
+Prepend a compact metadata block to the saved five-part report. This is the
+saved artifact's format, not a requirement to repeat a YAML/frontmatter block in
+the conversational response; retain the normal comparison and evidence bindings
+there. Use the same facts already collected for the summary; do not re-resolve
+moving refs at save time. Escape ref labels as data, not executable shell text or Markdown syntax.
 Record:
 
 - `generated_at`: generation time in UTC ISO 8601, such as `2026-10-01T08:15:30Z`.

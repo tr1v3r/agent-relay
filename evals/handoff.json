@@ -3,6 +3,17 @@
   "dataset_type": "behavior",
   "evals": [
     {
+      "id": "handoff-custom-destination",
+      "prompt": "总结这个分支，并保存到仓库外的 ../reports/latest.md，不要覆盖旧文件。若你只支持另一个保存位置，先问我；当前没有可交互的答复渠道。",
+      "expected_output": "解释此 handoff 过程只在当前 worktree 的 .agents/handoff/ 创建新报告；因未获替代路径确认而不落盘，仍返回完整报告。",
+      "files": [],
+      "expectations": [
+        "不向用户指定的非 handoff 位置写入，也不擅自改用默认位置",
+        "说明自定义导出需要另行明确范围；无法获得确认时不循环等待或猜测授权",
+        "没有覆盖、创建或修改任何输出文件，但对话含完整报告"
+      ]
+    },
+    {
       "id": "handoff-read-only",
       "prompt": "总结当前分支相对 main 的改动，只在对话里给我报告。仓库已有 .agents/handoff/。",
       "expected_output": "完整对话报告，无文件或目录写入，也不触碰现有交接文件。",
@@ -24,7 +35,8 @@
         "wip_scope 明确 staged、unstaged、untracked 的包含状态、路径限制和未跟踪行数口径",
         "WIP 记录完整 HEAD 身份及观察时间，说明 HEAD 无法重建未提交内容",
         "取证先于报告文件创建，避免把本次报告自身计入 WIP",
-        "使用当前 worktree 根目录下安全命名的新文件，验证成功后才报告保存路径"
+        "使用当前 worktree 根目录下安全命名的新文件，验证成功后才报告保存路径",
+        "保存产物含所需 metadata，对话仍完整展示正常五部分报告，不因未重复 frontmatter 判为缺失元数据"
       ]
     },
     {
