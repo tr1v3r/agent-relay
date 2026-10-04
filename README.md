@@ -79,6 +79,13 @@ The bundled eval set covers multi-module feature branches, one-commit bug fixes,
 dirty worktrees, generated-code-heavy changes, empty comparisons, and near-miss
 requests that should not trigger this skill.
 
+The [eight evidence cases](evals/evidence.json) additionally specify M/E mapping,
+committed deletion, WIP layers, generated-output provenance and rename coverage,
+scope-preserving follow-up, empty comparisons, zero-net-change history, and a
+staged rename followed by an unstaged deletion. Fixture associations make the
+Git inputs reproducible; dataset validation and Git-fact tests do not establish
+that a model has passed these behavioral expectations.
+
 ## Installation
 
 Copy or link this repository into the skill directory of any Agent

@@ -149,6 +149,10 @@ proof of implementation.
 Call out generated or bulk artifacts when they dominate the totals. Check
 repository conventions and `.gitattributes` in addition to recognizable paths
 such as generated clients, protobuf output, vendored code, and lock files.
+When relevant generation inputs or configuration exist (for example schemas,
+`buf.yaml`, or a Makefile), inspect them read-only in the selected version to
+trace the output's origin. Do not run generators for a summary. If that origin
+cannot be established, disclose the gap rather than infer it from filenames.
 
 ### Working-tree changes
 

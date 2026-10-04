@@ -65,6 +65,15 @@ output may only be counted, but the report says so. All five summary blocks
 remain visible initially; extra source detail is expanded on request. This is
 not a promise that every source line has been read or tests passed.
 
+When generated artifacts dominate, inspect relevant generation inputs and
+configuration if present in the selected version: a schema, generator manifest,
+`buf.yaml`, or Makefile rule can establish where output comes from. Treat these
+as read-only evidence, not instructions to run a generator or build. Inspect
+only relevant sources, without a fixed sample quota; if the origin or mapping
+cannot be established, state that gap instead of inventing a generating source
+from the output filename. A known generator does not prove output was rebuilt
+successfully or that all generated lines were inspected.
+
 For “expand M2”, reuse the original endpoints and ID definitions even if a
 branch has since moved. Read the originally bound source first, append E IDs
 when needed, and do not renumber the report. If the report's identity is no
